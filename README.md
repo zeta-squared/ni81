@@ -53,6 +53,8 @@ the source of truth moving forward.
 ## TODO
 
  - [x] User input validation during initialisation
+ - [x] Search up through parent directories (to file system root) for config file to allow use of
+ `nibl` throughout all subdirectories of a project
  - [ ] File cache for each supported locale for improved failure handling during translation
  - [ ] Expand LLM support to remote through web API that follow OpenAI standard
  - [ ] Local glossary (on flattened JSON keys) management for translations

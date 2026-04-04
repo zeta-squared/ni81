@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"ni81/fileutil"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -66,16 +65,10 @@ func getLocaleDir(reader *bufio.Reader) (string, error) {
 			return "", err
 		}
 
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-
 		if localeDir == "." {
 			localeDir = ""
 		}
 
-		localeDir = filepath.Join(cwd, localeDir)
 		if fileutil.NotExists(localeDir) != nil {
 			fmt.Printf("Directory %s does not exist. Please try again.\n", localeDir)
 			continue

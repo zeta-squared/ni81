@@ -1,8 +1,10 @@
 package project
 
 import (
+	"errors"
 	"ni81/config"
 	"ni81/fileutil"
+	"os"
 	"path/filepath"
 )
 
@@ -12,8 +14,8 @@ import (
 //   - saving those settings to "ni81.toml",
 //   - and creating an initial locale cache file.
 func Initialise() error {
-	err := fileutil.Exists("ni81.toml")
-	if err != nil {
+	_, err := fileutil.FindNearestConfigDir("ni81.toml")
+	if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 

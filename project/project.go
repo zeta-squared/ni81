@@ -127,14 +127,20 @@ func writeTranslations(path string, translation map[string]string) error {
 // NewProject creates and returns a Project instance by:
 //   - loading configuration from the given file path,
 //   - and initialising the necessary cache and translator components.
-func NewProject(path string) (Project, error) {
+func NewProject(name string) (Project, error) {
+	path, err := fileutil.FindNearestConfigDir(name)
+	if path == "" {
+		return Project{}, err
+	}
+
 	cfg := config.Config{}
-	err := cfg.Load(path)
+	err = cfg.Load(filepath.Join(path, name))
 	if err != nil {
 		return Project{}, err
 	}
 
-	cachePath := filepath.Join(cfg.I18n.LocaleDir, cfg.I18n.DefaultLocale+".cache.json")
+	localeDir := filepath.Join(path, cfg.I18n.LocaleDir)
+	cachePath := filepath.Join(localeDir, cfg.I18n.DefaultLocale+".cache.json")
 	targetLocales := make([]string, 0, len(cfg.I18n.Locales))
 	for i := range cfg.I18n.Locales {
 		if cfg.I18n.Locales[i] == cfg.I18n.DefaultLocale {
@@ -147,7 +153,7 @@ func NewProject(path string) (Project, error) {
 	return Project{
 		DefaultLocale: cfg.I18n.DefaultLocale,
 		TargetLocales: targetLocales,
-		LocaleDir:     cfg.I18n.LocaleDir,
+		LocaleDir:     localeDir,
 		Model:         cfg.Model,
 		Cache:         cache.FileCache{Path: cachePath},
 		Translator:    translate.Ollama{Model: cfg.Model.Name, Url: cfg.Model.Url},

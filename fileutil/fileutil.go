@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // ReadFile reads the contents of a file located at path.
@@ -55,4 +56,25 @@ func NotExists(path string) error {
 	}
 
 	return nil
+}
+
+func FindNearestConfigDir(name string) (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if Exists(filepath.Join(dir, name)) != err {
+			return dir, fmt.Errorf("Already in project %s", dir)
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// reached filesystem root
+			return "", os.ErrNotExist
+		}
+
+		dir = parent
+	}
 }
