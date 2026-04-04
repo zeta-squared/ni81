@@ -29,9 +29,6 @@ nibl init
 This will produce a TOML (`ni81.toml`) file in your projects root directory. If for any reason this file becomes corrupted
 you can remove it and re-run `init`, this will not effect the existing translations provided by ni81.
 
-> [!CAUTION]
-> There is currently no validation performed on user input that is requested during the initialisation process.
-
 Once the project has been initialised ni81 will make translations based on changes to your default locale
 file. To translate use
 ```
