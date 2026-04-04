@@ -20,6 +20,8 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
+
+		fallthrough
 	case "cache":
 		proj, err := project.NewProject("ni81.toml")
 		if err != nil {

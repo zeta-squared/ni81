@@ -5,7 +5,6 @@ import (
 	"ni81/config"
 	"ni81/fileutil"
 	"os"
-	"path/filepath"
 )
 
 // Initialise sets up the application by
@@ -24,10 +23,5 @@ func Initialise() error {
 		return err
 	}
 
-	err = cfg.Save("ni81.toml")
-	if err != nil {
-		return err
-	}
-
-	return fileutil.CreateFile(filepath.Join(cfg.I18n.LocaleDir, cfg.I18n.DefaultLocale+".cache.json"))
+	return cfg.Save("ni81.toml")
 }

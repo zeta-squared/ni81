@@ -15,8 +15,10 @@ import (
 func ReadFile(path string) ([]byte, error) {
 	_, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
-		// File does not exist - create it
-		return []byte{}, nil
+		err := CreateFile(path)
+		if err != nil {
+			return nil, err
+		}
 	} else if err != nil {
 		return nil, err
 	}
