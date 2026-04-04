@@ -35,12 +35,23 @@ func CreateFile(path string) error {
 	return file.Close()
 }
 
-// Exists checks if the file at path exists.
+// Exists checks if the directory or file at path exists.
 //
 // If path exists, it returns an error.
 func Exists(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("%s already exists", path)
+	}
+
+	return nil
+}
+
+// NotExists checks if the directory or file at path does not exist.
+//
+// If path does not exists and error is returned.
+func NotExists(path string) error {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 
 	return nil

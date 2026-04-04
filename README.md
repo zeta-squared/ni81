@@ -52,7 +52,7 @@ the source of truth moving forward.
 
 ## TODO
 
- - [ ] User input validation during initialisation
+ - [x] User input validation during initialisation
  - [ ] File cache for each supported locale for improved failure handling during translation
  - [ ] Expand LLM support to remote through web API that follow OpenAI standard
  - [ ] Local glossary (on flattened JSON keys) management for translations
