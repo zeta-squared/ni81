@@ -3,27 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
+	"ni81/config"
 	"ni81/project"
 	"os"
 )
 
 func main() {
-	if len(os.Args) < 2 || os.Args[1] == "--help" {
+	if len(os.Args) < 2 {
 		logUsage()
 		os.Exit(0)
 	}
 
-	// TODO: use `flags` package
 	switch os.Args[1] {
 	case "init":
 		err := project.Initialise()
 		if err != nil {
 			log.Fatalln(err)
 		}
-
-		fallthrough
 	case "cache":
-		proj, err := project.NewProject("ni81.toml")
+		proj, err := project.NewProject(config.ConfigName)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -33,7 +31,7 @@ func main() {
 			log.Fatalln(err)
 		}
 	case "translate":
-		proj, err := project.NewProject("ni81.toml")
+		proj, err := project.NewProject(config.ConfigName)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -42,9 +40,11 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
+	case "--help", "-h", "help":
+		logUsage()
 	default:
 		logUsage()
-		os.Exit(0)
+		os.Exit(1)
 	}
 }
 

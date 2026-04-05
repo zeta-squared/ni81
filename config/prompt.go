@@ -6,44 +6,46 @@ import (
 	"net/url"
 	"ni81/fileutil"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
 	"golang.org/x/text/language"
 )
 
-// NewConfigFromPrompt initiates an interactive CLI session to gather user input
-// and construct a new Config instance.
-func NewConfigFromPrompt() (Config, error) {
-	reader := bufio.NewReader(os.Stdin)
-
+// NewConfigFromReader interactively constructs a config by prompting
+// the user for required inputs via the provided reader.
+//
+// It guides the user through setting up locale directories, supported locales,
+// default locale, and model configuration.
+func NewConfigFromReader(reader *bufio.Reader) (config, error) {
 	localeDir, err := getLocaleDir(reader)
 	if err != nil {
-		return Config{}, err
+		return config{}, err
 	}
 
 	locales, err := getProjectLocales(reader, localeDir)
 	if err != nil {
-		return Config{}, err
+		return config{}, err
 	}
 
 	defaultLocale, err := getDefaultLocale(reader, locales)
 	if err != nil {
-		return Config{}, err
+		return config{}, err
 	}
 
 	modelName, err := getModelName(reader)
 	if err != nil {
-		return Config{}, err
+		return config{}, err
 	}
 
 	modelUrl, err := getModelUrl(reader)
 	if err != nil {
-		return Config{}, err
+		return config{}, err
 	}
 
-	return Config{
-		I18n: I18nConfig{
+	return config{
+		I18n: i18nConfig{
 			DefaultLocale: defaultLocale,
 			Locales:       locales,
 			LocaleDir:     localeDir,
@@ -55,8 +57,15 @@ func NewConfigFromPrompt() (Config, error) {
 	}, nil
 }
 
-// getLocaleDir prompts the user for the directory containing translation files
-// and returns the absolute path.
+// getLocaleDir prompts the user to provide a relative path to the
+// project's translation directory.
+//
+// It validates that the path:
+//   - is relative,
+//   - does not escape the project directory,
+//   - and exists on disk.
+//
+// The returned path is normalised to use forward slashes.
 func getLocaleDir(reader *bufio.Reader) (string, error) {
 	for {
 		fmt.Print("What (relative) directory are the project i18n translation files stored in? ")
@@ -65,21 +74,33 @@ func getLocaleDir(reader *bufio.Reader) (string, error) {
 			return "", err
 		}
 
-		if localeDir == "." {
-			localeDir = ""
+		localeDir = filepath.Clean(localeDir)
+		if filepath.IsAbs(localeDir) {
+			fmt.Println("Please provide a relative path, not an absolute path.")
+			continue
 		}
 
-		if fileutil.NotExists(localeDir) != nil {
+		if strings.HasPrefix(localeDir, "..") {
+			fmt.Println("Path must be within the project directory.")
+			continue
+		}
+
+		if fileutil.NotExists(localeDir) {
 			fmt.Printf("Directory %s does not exist. Please try again.\n", localeDir)
 			continue
 		}
 
-		return localeDir, nil
+		return filepath.ToSlash(localeDir), nil
 	}
 }
 
-// getProjectLocales identifies existing translation files in the localeDir and
-// allows the user to manually add or confirm supported language codes.
+// getProjectLocales determines the set of locales used in the project.
+//
+// It detects existing locale files in the given directory and optionally
+// allows the user to include them. The user may also input additional locales,
+// which are validated and created as empty JSON files if necessary.
+//
+// The returned slice contains unique, validated locale identifiers.
 func getProjectLocales(reader *bufio.Reader, localeDir string) ([]string, error) {
 	var ans string
 	existingLocales, err := findExistingLocales(localeDir)
@@ -88,12 +109,10 @@ func getProjectLocales(reader *bufio.Reader, localeDir string) ([]string, error)
 	}
 
 	if len(existingLocales) > 0 {
-		foundLocales := ""
-		for i := range existingLocales {
-			foundLocales += "\n" + existingLocales[i]
-		}
-
-		fmt.Printf("The following locales have been found\n%s\n\nDo you want to add them to the project? [y/N] ", foundLocales)
+		fmt.Printf(
+			"The following locales have been found\n\n\t- %s\n\nDo you want to add them to the project? [Y/n] ",
+			strings.Join(existingLocales, "\n\t- "),
+		)
 		ans, err = readLine(reader)
 		if err != nil {
 			return nil, err
@@ -102,7 +121,7 @@ func getProjectLocales(reader *bufio.Reader, localeDir string) ([]string, error)
 
 localesLoop:
 	for {
-		if strings.ToLower(strings.TrimSpace(ans)) == "y" {
+		if len(existingLocales) > 0 && strings.ToLower(strings.TrimSpace(ans)) != "n" {
 			fmt.Print("Enter a comma separated list of other locales to include in this project, e.g. en-US, en-GB (optional): ")
 		} else {
 			fmt.Print("Enter a comma separated list of locales in this project, e.g. en-US, en-GB: ")
@@ -123,6 +142,10 @@ localesLoop:
 		}
 
 		dedupedLocales := map[string]bool{}
+		for i := range existingLocales {
+			dedupedLocales[existingLocales[i]] = true
+		}
+
 		splitLocales := strings.Split(locales, ",")
 		invalids := make([]string, 0, len(splitLocales))
 
@@ -138,7 +161,10 @@ localesLoop:
 				continue
 			}
 
-			dedupedLocales[validatedLocale] = true
+			if _, ok := dedupedLocales[validatedLocale]; !ok {
+				os.WriteFile(filepath.Join(localeDir, validatedLocale+".json"), []byte("{}"), 0664)
+				dedupedLocales[validatedLocale] = true
+			}
 		}
 
 		if len(invalids) == 1 {
@@ -147,10 +173,6 @@ localesLoop:
 		} else if len(invalids) > 0 {
 			fmt.Printf("Invalid locales: %s\n", strings.Join(invalids, ", "))
 			continue
-		}
-
-		for i := range existingLocales {
-			dedupedLocales[existingLocales[i]] = true
 		}
 
 		tomlLocales := make([]string, 0, len(dedupedLocales))
@@ -162,8 +184,10 @@ localesLoop:
 	}
 }
 
-// findExistingLocales scans the specified directory for .json files and
-// extracts the locale names from the filenames.
+// findExistingLocales scans the given directory for valid locale JSON files.
+//
+// It extracts locale identifiers from filenames of the form "<locale>.json",
+// validates them, and returns the list of recognised locales.
 func findExistingLocales(localeDir string) ([]string, error) {
 	files, err := os.ReadDir(localeDir)
 	if err != nil {
@@ -186,7 +210,9 @@ func findExistingLocales(localeDir string) ([]string, error) {
 	return existingLocales, nil
 }
 
-// getDefaultLocale prompts the user to specify the primary fallback language for the project.
+// getDefaultLocale prompts the user to select the default locale for the project.
+//
+// The selected locale must be valid and present in the provided options.
 func getDefaultLocale(reader *bufio.Reader, options []string) (string, error) {
 	for {
 		fmt.Print("What is the default locale of this project? ")
@@ -202,7 +228,7 @@ func getDefaultLocale(reader *bufio.Reader, options []string) (string, error) {
 		}
 
 		if !slices.Contains(options, validatedLocale) {
-			fmt.Printf("Default locale must be one of %s. Please try again.", strings.Join(options, ", "))
+			fmt.Printf("Default locale must be one of %s. Please try again.\n", strings.Join(options, ", "))
 			continue
 		}
 
@@ -210,7 +236,9 @@ func getDefaultLocale(reader *bufio.Reader, options []string) (string, error) {
 	}
 }
 
-// getModelName prompts the user for the name of the Ollama model to be used for translations.
+// getModelName prompts the user to provide the name of the translation model.
+//
+// The input must be non-empty.
 func getModelName(reader *bufio.Reader) (string, error) {
 	for {
 		fmt.Print("Provide a (ollama) model name to use for translations: ")
@@ -228,7 +256,10 @@ func getModelName(reader *bufio.Reader) (string, error) {
 	}
 }
 
-// getModelUrl prompts the user for the server URL of the Ollama model to be used for translations.
+// getModelUrl prompts the user to provide the model server URL.
+//
+// If left blank, a default of "http://localhost:11434" is used.
+// The input is validated to ensure it is a properly formatted HTTP or HTTPS URL.
 func getModelUrl(reader *bufio.Reader) (string, error) {
 	for {
 		modelUrl := "http://localhost:11434"
@@ -258,7 +289,10 @@ func getModelUrl(reader *bufio.Reader) (string, error) {
 	}
 }
 
-// readLine captures a single line of input from the provided reader and trims leading/trailing whitespace.
+// readLine reads a single line from the provided reader and trims
+// leading and trailing whitespace.
+//
+// It returns an error if reading from the reader fails.
 func readLine(reader *bufio.Reader) (string, error) {
 	res, err := reader.ReadString('\n')
 	if err != nil {
@@ -268,6 +302,9 @@ func readLine(reader *bufio.Reader) (string, error) {
 	return strings.TrimSpace(res), nil
 }
 
+// validateLocale parses and normalises a locale string using BCP 47 rules.
+//
+// It returns the canonical locale representation or an error if the input is invalid.
 func validateLocale(input string) (string, error) {
 	tag, err := language.Parse(input)
 	if err != nil {

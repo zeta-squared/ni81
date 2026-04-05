@@ -2,41 +2,72 @@ package serialization
 
 import (
 	"encoding/json"
+	"io"
 	"maps"
-	"os"
 	"strings"
 )
 
-// ParseJSON decodes a JSON byte slice into a flattened JSON object.
-//
-// If the input data is empty or contains invalid JSON, it returns an empty map and an error.
-func ParseJSON(data []byte) (map[string]string, error) {
+// ReadWriter defines methods for reading and writing translation data.
+// Implementations control how translation files are serialised and deserialised.
+type ReadWriter interface {
+	Read(r io.Reader) (map[string]string, error)
+	Write(w io.Writer, obj map[string]string, unflatten bool) error
+}
+
+// JSONReadWriter implements ReadWriter for JSON-based translation files.
+// It supports flattening nested JSON structures on read and optionally
+// unflattening them on write.
+type JSONReadWriter struct {
+}
+
+// Read parses JSON data from the provided reader and returns a flattened
+// map of translation keys to values. Empty input results in an empty map.
+func (JSONReadWriter) Read(r io.Reader) (map[string]string, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(data) == 0 {
 		return map[string]string{}, nil
 	}
 
 	obj := make(map[string]any)
-	err := json.Unmarshal(data, &obj)
+	err = json.Unmarshal(data, &obj)
+	if err != nil {
+		return nil, err
+	}
 
-	return Flatten("", obj), err // NOTE:inefficient as we may flatten already flattened JSON
+	return flatten("", obj), err
 }
 
-// WriteJSON writes a map[string]T into a JSON file with indentation.
+// Write serialises the provided translation map to JSON and writes it to w.
 //
-// If an error occurs during marshaling or writing to the file, it returns an error.
-func WriteJSON[T any](path string, obj map[string]T) error {
-	o, err := json.MarshalIndent(obj, "", "  ")
+// If unflattenObj is true, the map is first converted into a nested structure
+// before encoding. Otherwise, the flat structure is written directly.
+func (JSONReadWriter) Write(w io.Writer, obj map[string]string, unflattenObj bool) error {
+	var o []byte
+	var err error
+
+	if unflattenObj {
+		o, err = json.MarshalIndent(unflatten(obj), "", "  ")
+	} else {
+		o, err = json.MarshalIndent(obj, "", "  ")
+	}
+
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(path, o, 0664)
+	_, err = w.Write(o)
+
+	return err
 }
 
-// Flatten converts a nested map[string]any into a flat map[string]string.
+// flatten converts a nested map into a flat map using dot-separated keys.
 //
-// It prefixes keys with the given prefix and handles nested maps recursively.
-func Flatten(prefix string, m map[string]any) map[string]string {
+// For example, {"a": {"b": "c"}} becomes {"a.b": "c"}.
+func flatten(prefix string, m map[string]any) map[string]string {
 	flat := make(map[string]string)
 	for k, v := range m {
 		key := k
@@ -46,7 +77,7 @@ func Flatten(prefix string, m map[string]any) map[string]string {
 
 		switch val := v.(type) {
 		case map[string]any:
-			maps.Copy(flat, Flatten(key, val))
+			maps.Copy(flat, flatten(key, val))
 		case string:
 			flat[key] = val
 		}
@@ -55,10 +86,10 @@ func Flatten(prefix string, m map[string]any) map[string]string {
 	return flat
 }
 
-// Unflatten converts a flat map[string]string back into a nested map[string]any.
+// unflatten converts a flat map with dot-separated keys into a nested map.
 //
-// It splits keys on the '.' delimiter to reconstruct the original nested structure.
-func Unflatten(flat map[string]string) map[string]any {
+// For example, {"a.b": "c"} becomes {"a": {"b": "c"}}.
+func unflatten(flat map[string]string) map[string]any {
 	root := make(map[string]any)
 
 	for k, v := range flat {
