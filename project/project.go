@@ -46,16 +46,19 @@ func (p project) CreateCache() error {
 //
 // If any translation or write operation fails, processing continues for
 // remaining locales, but the cache is not updated.
-func (p project) Translate() error {
+func (p project) Translate(clean bool) error {
 	newDefault, err := p.readTranslations(p.defaultLocale)
 	if err != nil {
 		return err
 	}
 
-	// Load oldDefault
-	oldDefault, err := p.cache.Read()
-	if err != nil {
-		return err
+	oldDefault := map[string]string{}
+	if !clean {
+		// Load oldDefault
+		oldDefault, err = p.cache.Read()
+		if err != nil {
+			return err
+		}
 	}
 
 	failed := false
@@ -98,6 +101,11 @@ localeLoop:
 			fmt.Println(err)
 			continue localeLoop
 		}
+	}
+
+	// Order default locale JSON
+	if err := p.writeTranslations(p.defaultLocale, newDefault); err != nil {
+		return err
 	}
 
 	if failed {

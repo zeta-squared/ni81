@@ -36,7 +36,12 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		err = proj.Translate()
+		clean := false
+		if len(os.Args) > 2 && os.Args[2] == "--clean" {
+			clean = true
+		}
+
+		err = proj.Translate(clean)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -51,10 +56,13 @@ func main() {
 func logUsage() {
 	fmt.Println("Manage your project's i18n by nibbling away at it")
 	fmt.Println()
-	fmt.Println("USAGE: ni81 <command>")
+	fmt.Println("USAGE: ni81 <command> [FLAGS]")
 	fmt.Println()
 	fmt.Println("COMMANDS")
 	fmt.Println("  init\t\tInitialize a new project")
 	fmt.Println("  cache\t\tCreate a cache for the project")
 	fmt.Println("  translate\tTranslate files in the project")
+	fmt.Println()
+	fmt.Println("FLAGS")
+	fmt.Println("  --clean\tUse with translate to perform translations as if cache is empty")
 }

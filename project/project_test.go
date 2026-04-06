@@ -159,7 +159,7 @@ func Test_Translate(t *testing.T) {
 		translator:     mockTranslator{},
 	}
 
-	if err := p.Translate(); err != nil {
+	if err := p.Translate(false); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -214,7 +214,7 @@ func Test_Translate_Failure(t *testing.T) {
 		translator:     failingTranslator{},
 	}
 
-	err := p.Translate()
+	err := p.Translate(false)
 	if err != nil {
 		t.Fatalf("Expected nil, got %v", err)
 	}

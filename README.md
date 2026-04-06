@@ -31,6 +31,17 @@ existing translations provided by ni81. The initialise process will also order a
 clutter in future diffs when performing translations) and generate a file cache to use as a source of truth.
 As with the generated config file you should also commit the file cache to your VCS.
 
+In addition to the config created by `nibl init` a file cache (`<default_locale>.cache.json`) is created to
+act as a source of truth. This should also be commited to your VCS as it is necessary to determine what keys
+are added, modified, or removed, in the future. If at any point you need to recreate your cache you can use
+```
+nibl cache
+```
+
+> [!WARNING]
+> Recreating your cache will make the default locale file, at the time of the new cache creation, the source
+> of truth moving forward.
+
 Once the project has been initialised ni81 will make translations based on changes to your default locale
 file. To translate use
 ```
@@ -38,16 +49,38 @@ nibl translate
 ```
 This will translate the default locale to all supported locales in your project's `ni81.toml` file. If there
 is a failure in any key-value pair of a locale, the entire locale will be skipped. Moreover, a failure will
-cause the cache to not be updated so you can rerun `translate`.
-
-Part of the translation process is the update of the cache (stored in the same directory as your i18n
-translation files as `<default_locale>.cache.json`). This cache should be tracked in your VCS as it is necessary to determine what keys are
-added/modified/removed in the future. If at any point you need to recreate your cache you can use
+cause the cache to not be updated so you can rerun `translate`. In some instances, you may want to perform
+translations as if the cache is empty. For example, suppose you have a default locale file (`en.json`) populated with
 ```
-nibl cache
+{
+    "buttons": {
+        "login": "Login",
+        "submit": "Submit"
+    },
+    "banners": {
+        "alert": "Alert",
+        "warning": "Warning",
+        "info": "Info"
+    }
+}
 ```
-Keep in mind, doing so will make the default locale translation file, at the time this new cache is created,
-the source of truth moving forward.
+The cache (`en.cache.json`) created during project initialisation would be
+```
+{
+    "buttons.login": "Login",
+    "buttons.submit": "Submit",
+    "banners.alert": "Alert",
+    "banners.warning": "Warning",
+    "banners.info": "Info"
+}
+```
+so any attempt to use `nibl translate` would result in nothing happening as it seems the source of truth
+(`en.cache.json`) has the same keys as the flattened default locale file (`en.json`). In such a case, we can
+pass a `--clean` flag 
+```
+nibl translate --clean
+```
+so that translations run assuming the cache is empty, that is, the contents of `en.cache.json` are `{}`.
 
 ## TODO
 
@@ -55,6 +88,7 @@ the source of truth moving forward.
  - [x] Search up through parent directories (to file system root) for config file to allow use of
  `nibl` throughout all subdirectories of a project
  - [x] Create cache from `<default_locale>.json` if it exists
+ - [x] Flag to run translations as if cache is empty
  - [ ] File cache for each supported locale for improved failure handling during translation
  - [x] Expand LLM support to remote through web API that follow OpenAI standard
  - [ ] Local glossary (on flattened JSON keys) management for translations
