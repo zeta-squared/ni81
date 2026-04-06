@@ -16,9 +16,8 @@ Build from source using `make build` or download one of the released binaries.
 
 ## Prerequisites
 
-Currently ni81 only supports translations through models available to run on your local through
-[ollama](https://ollama.com/). Ensure this is installed and your ollama server is running (on port `11434`)
-before attempting any translations.
+Currently ni81 only supports translations through models available that support the OpenAI API standard. The
+most convenient option is to run a model locally through [ollama](https://ollama.com/).
 
 ## Usage
 
@@ -26,11 +25,11 @@ You will need to initialise your project in the project's root directory
 ```
 nibl init
 ```
-This will produce a TOML (`ni81.toml`) file in your projects root directory. If for any reason this file becomes corrupted
-you can remove it and re-run `init`, this will not effect the existing translations provided by ni81.
-
-> [!CAUTION]
-> There is currently no validation performed on user input that is requested during the initialisation process.
+This will produce a TOML (`ni81.toml`) file in your project's root directory (which you should commit to your VCS).
+If for any reason this file becomes corrupted you can remove it and re-run `init`, this will not effect the
+existing translations provided by ni81. The initialise process will also order any existing JSON files (to avoid
+clutter in future diffs when performing translations) and generate a file cache to use as a source of truth.
+As with the generated config file you should also commit the file cache to your VCS.
 
 Once the project has been initialised ni81 will make translations based on changes to your default locale
 file. To translate use
@@ -57,8 +56,8 @@ the source of truth moving forward.
  `nibl` throughout all subdirectories of a project
  - [x] Create cache from `<default_locale>.json` if it exists
  - [ ] File cache for each supported locale for improved failure handling during translation
- - [ ] Expand LLM support to remote through web API that follow OpenAI standard
+ - [x] Expand LLM support to remote through web API that follow OpenAI standard
  - [ ] Local glossary (on flattened JSON keys) management for translations
  - [ ] Locale flag for `translation` to translate to specified locale
  - [ ] Improved error logging
- - [ ] Expand test coverage
+ - [x] Expand test coverage

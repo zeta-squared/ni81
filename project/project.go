@@ -2,6 +2,8 @@ package project
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"ni81/cache"
 	"ni81/config"
 	"ni81/fileutil"
@@ -178,6 +180,6 @@ func NewProject(name string) (project, error) {
 		model:          cfg.Model,
 		cache:          cache,
 		jsonReadWriter: serialization.JSONReadWriter{},
-		translator:     translate.Ollama{Model: cfg.Model.Name, Url: cfg.Model.Url},
+		translator:     translator,
 	}, nil
 }
