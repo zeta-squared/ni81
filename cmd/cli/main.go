@@ -56,7 +56,7 @@ func main() {
 func logUsage() {
 	fmt.Println("Manage your project's i18n by nibbling away at it")
 	fmt.Println()
-	fmt.Println("USAGE: ni81 <command> [FLAGS]")
+	fmt.Println("USAGE: nibl <command> [FLAGS]")
 	fmt.Println()
 	fmt.Println("COMMANDS")
 	fmt.Println("  init\t\tInitialize a new project")

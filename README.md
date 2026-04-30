@@ -95,3 +95,13 @@ so that translations run assuming the cache is empty, that is, the contents of `
  - [ ] Locale flag for `translation` to translate to specified locale
  - [ ] Improved error logging
  - [x] Expand test coverage
+ - [ ] Allow for sensitive information storage away from `toml` config file
+ - [ ] Expand remote OpenAI API support:
+    - [ ] Adding support for bearer authentication
+    - [ ] Custom model prompt when using `generate` endpoint
+    - [ ] Custom body values for model options, such as, `think`, `keep_alive`, `options` etc.
+    - [ ] Use of endpoints other than `generate`
+- [ ] Add `status` command to log keys that are
+    - [ ] added
+    - [ ] modified
+    - [ ] deleted
