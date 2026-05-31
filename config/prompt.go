@@ -142,15 +142,15 @@ localesLoop:
 		}
 
 		dedupedLocales := map[string]bool{}
-		for i := range existingLocales {
-			dedupedLocales[existingLocales[i]] = true
+		for _, locale := range existingLocales {
+			dedupedLocales[locale] = true
 		}
 
 		splitLocales := strings.Split(locales, ",")
 		invalids := make([]string, 0, len(splitLocales))
 
-		for i := range splitLocales {
-			locale := strings.TrimSpace(splitLocales[i])
+		for _, splitLocale := range splitLocales {
+			locale := strings.TrimSpace(splitLocale)
 			if locale == "" {
 				continue
 			}
@@ -195,9 +195,9 @@ func findExistingLocales(localeDir string) ([]string, error) {
 	}
 
 	existingLocales := make([]string, 0, len(files))
-	for i := range files {
-		if strings.HasSuffix(files[i].Name(), ".json") && len(strings.Split(files[i].Name(), ".")) == 2 {
-			locale := strings.Split(files[i].Name(), ".")[0]
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".json") && len(strings.Split(file.Name(), ".")) == 2 {
+			locale := strings.Split(file.Name(), ".")[0]
 			validatedLocale, err := validateLocale(locale)
 			if err != nil {
 				continue

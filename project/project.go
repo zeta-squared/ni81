@@ -73,14 +73,17 @@ localeLoop:
 		}
 
 		// Find new entries
-		for k := range newDefault {
-			if _, ok := oldDefault[k]; !ok {
+		for k, newVal := range newDefault {
+			oldVal, ok := oldDefault[k]
+
+			if !ok {
 				// New key-value pair added
-				target[k], err = p.translator.Translate(newDefault[k], p.defaultLocale, locale)
-			} else if oldDefault[k] != newDefault[k] {
+				target[k], err = p.translator.Translate(newVal, p.defaultLocale, locale)
+			} else if oldVal != newVal {
 				// Previous key-value pair updated
-				target[k], err = p.translator.Translate(newDefault[k], p.defaultLocale, locale)
+				target[k], err = p.translator.Translate(newVal, p.defaultLocale, locale)
 			}
+
 			if err != nil {
 				failed = true
 				fmt.Println(err)
@@ -158,12 +161,12 @@ func NewProject(name string) (project, error) {
 	}
 
 	targetLocales := make([]string, 0, len(cfg.I18n.Locales))
-	for i := range cfg.I18n.Locales {
-		if cfg.I18n.Locales[i] == cfg.I18n.DefaultLocale {
+	for _, locale := range cfg.I18n.Locales {
+		if locale == cfg.I18n.DefaultLocale {
 			continue
 		}
 
-		targetLocales = append(targetLocales, cfg.I18n.Locales[i])
+		targetLocales = append(targetLocales, locale)
 	}
 
 	localeDir := filepath.Join(dir, cfg.I18n.LocaleDir)
