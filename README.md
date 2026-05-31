@@ -82,6 +82,34 @@ nibl translate --clean
 ```
 so that translations run assuming the cache is empty, that is, the contents of `en.cache.json` are `{}`.
 
+ni81 offers a `diff` command to show what keys have been added, modified, or deleted in your JSON. Using the example
+```
+{
+    "buttons": {
+        "login": "Login",
+        "submit": "Submit"
+    },
+    "banners": {
+        "alert": "Alert",
+        "warning": "Warning",
+        "info": "Info"
+    }
+}
+```
+if we
+- modify the `"buttons.login"` value to `"Sign in"`,
+- add `"buttons.save": "Save"` and,
+- delete the `"banners.warning"` key,
+the `nibl diff` command will print
+```
+-"banners.warning": "Warning"
+
+-"buttons.login": "Login"
++"buttons.login": "Sign in"
+
++"buttons.save": "Save"
+```
+
 ## TODO
 
  - [x] User input validation during initialisation
@@ -101,7 +129,8 @@ so that translations run assuming the cache is empty, that is, the contents of `
     - [ ] Custom model prompt when using `generate` endpoint
     - [ ] Custom body values for model options, such as, `think`, `keep_alive`, `options` etc.
     - [ ] Use of endpoints other than `generate`
-- [ ] Add `status` command to log keys that are
-    - [ ] added
-    - [ ] modified
-    - [ ] deleted
+- [x] Add `diff` command to log keys that are
+    - [x] added
+    - [x] modified
+    - [x] deleted
+- [ ] Better error logging. For example, if there is malformed JSON this should be reported clearly.
