@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"ni81/cache"
@@ -11,6 +12,13 @@ import (
 	"ni81/translate"
 	"os"
 	"path/filepath"
+	"slices"
+)
+
+const (
+	red   = "\033[31m"
+	green = "\033[32m"
+	reset = "\033[0m"
 )
 
 // project represents a translation project with all required configuration
@@ -24,6 +32,11 @@ type project struct {
 	cache          cache.Cache
 	jsonReadWriter serialization.ReadWriter
 	translator     translate.Translator
+}
+
+type change struct {
+	key  string
+	text string
 }
 
 // CreateCache reads the default locale file and writes its contents
@@ -117,6 +130,74 @@ localeLoop:
 
 	// Rewrite cache
 	return p.cache.Write(newDefault)
+}
+
+// Diff compares the current default locale translations with the cached
+// previous state and writes a human-readable, ANSI-colored diff to w.
+//
+// The output shows added, modified, and deleted translation keys:
+//   - Added keys are shown with a green "+" line.
+//   - Deleted keys are shown with a red "-" line.
+//   - Modified keys are shown as a red "-" old value line followed by a green "+" new value line.
+//
+// Output is sorted by key to ensure deterministic ordering. Each change
+// is separated by a blank line, except after the final entry.
+//
+// Diff returns an error if either the current or cached translations
+// cannot be read.
+func (p project) Diff(w io.Writer) error {
+	newDefault, err := p.readTranslations(p.defaultLocale)
+	if err != nil {
+		return err
+	}
+
+	oldDefault, err := p.cache.Read()
+	if err != nil {
+		return err
+	}
+
+	changes := make([]change, 0)
+
+	// Find new and modified entries
+	for k, newVal := range newDefault {
+		oldVal, ok := oldDefault[k]
+
+		if !ok {
+			// New key-value pair added
+			changes = append(changes, change{key: k, text: fmt.Sprintf("%s+\"%s\": \"%s\"%s\n", green, k, newVal, reset)})
+			continue
+		} else if oldVal != newVal {
+			// Previous key-value pair modified
+			changes = append(changes, change{key: k, text: fmt.Sprintf("%[4]s-\"%[1]s\": \"%[2]s\"%[6]s\n%[5]s+\"%[1]s\": \"%[3]s\"%[6]s\n", k, oldVal, newVal, red, green, reset)})
+		}
+
+		delete(oldDefault, k)
+	}
+
+	// Remove deleted key-value pairs
+	for k, oldVal := range oldDefault {
+		changes = append(changes, change{key: k, text: fmt.Sprintf("%s-\"%s\": \"%s\"%s\n", red, k, oldVal, reset)})
+	}
+
+	slices.SortFunc(changes, func(a, b change) int {
+		if a.key < b.key {
+			return -1
+		} else if a.key > b.key {
+			return 1
+		}
+
+		return 0
+	})
+
+	for i := range changes {
+		if i != len(changes)-1 {
+			fmt.Fprintln(w, changes[i].text)
+		} else {
+			fmt.Fprint(w, changes[i].text)
+		}
+	}
+
+	return nil
 }
 
 // readTranslations reads a locale JSON file from the project's locale directory
