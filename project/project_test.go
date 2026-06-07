@@ -1,6 +1,7 @@
 package project
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"ni81/config"
@@ -235,6 +236,50 @@ func Test_Translate_Failure(t *testing.T) {
 
 	if len(out) != 0 {
 		t.Errorf("Expected empty output, got %v", out)
+	}
+}
+
+func Test_Diff(t *testing.T) {
+	oldDefault := map[string]string{
+		"common.button.save": "Save",
+		"pages.home.title":   "Landing",
+	}
+	newDefault := map[string]string{
+		"common.button.submit": "Submit",
+		"pages.home.title":     "Home",
+	}
+	expected := []byte(
+		"\033[31m-\"common.button.save\": \"Save\"\033[0m\n\n" +
+			"\033[32m+\"common.button.submit\": \"Submit\"\033[0m\n\n" +
+			"\033[31m-\"pages.home.title\": \"Landing\"\033[0m\n" +
+			"\033[32m+\"pages.home.title\": \"Home\"\033[0m\n",
+	)
+
+	tmp := os.TempDir()
+
+	newData, _ := json.Marshal(newDefault)
+	if err := os.WriteFile(filepath.Join(tmp, "en.json"), newData, 0664); err != nil {
+		t.Fatal(err)
+	}
+
+	mockCache := &mockCache{
+		readData: oldDefault,
+	}
+
+	p := project{
+		defaultLocale:  "en",
+		targetLocales:  []string{"es"},
+		cache:          mockCache,
+		localeDir:      tmp,
+		jsonReadWriter: serialization.JSONReadWriter{},
+		translator:     mockTranslator{},
+	}
+
+	var diffB bytes.Buffer
+	p.Diff(&diffB)
+
+	if diff := cmp.Diff(expected, diffB.Bytes()); diff != "" {
+		t.Error(diff)
 	}
 }
 

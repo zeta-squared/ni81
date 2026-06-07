@@ -30,6 +30,16 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
+	case "diff":
+		proj, err := project.NewProject(config.ConfigName)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		err = proj.Diff(os.Stdout)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	case "translate":
 		proj, err := project.NewProject(config.ConfigName)
 		if err != nil {
@@ -61,6 +71,7 @@ func logUsage() {
 	fmt.Println("COMMANDS")
 	fmt.Println("  init\t\tInitialize a new project")
 	fmt.Println("  cache\t\tCreate a cache for the project")
+	fmt.Println("  diff\t\tShow all added, modified, or deleted, keys")
 	fmt.Println("  translate\tTranslate files in the project")
 	fmt.Println()
 	fmt.Println("FLAGS")
