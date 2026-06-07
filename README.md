@@ -100,6 +100,7 @@ if we
 - modify the `"buttons.login"` value to `"Sign in"`,
 - add `"buttons.save": "Save"` and,
 - delete the `"banners.warning"` key,
+
 the `nibl diff` command will print
 ```
 -"banners.warning": "Warning"
