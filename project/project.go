@@ -100,6 +100,10 @@ localeLoop:
 			}
 
 			if err != nil {
+				if errors.Is(err, translate.ConnError{}) {
+					return err
+				}
+
 				failed = true
 				fmt.Println(err)
 				continue localeLoop
