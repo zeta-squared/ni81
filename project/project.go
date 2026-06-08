@@ -1,6 +1,8 @@
 package project
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -210,7 +212,13 @@ func (p project) readTranslations(locale string) (map[string]string, error) {
 
 	defer file.Close()
 
-	return p.jsonReadWriter.Read(file)
+	obj, err := p.jsonReadWriter.Read(file)
+	var syntaxError *json.SyntaxError
+	if errors.As(err, &syntaxError) {
+		return obj, fmt.Errorf("%w | %s", err, file.Name())
+	}
+
+	return obj, err
 }
 
 // writeTranslations writes the provided translations to the specified locale file.

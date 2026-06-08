@@ -1,6 +1,9 @@
 package cache
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"ni81/serialization"
 	"os"
 )
@@ -36,7 +39,13 @@ func (fc fileCache) Read() (map[string]string, error) {
 
 	defer file.Close()
 
-	return fc.readWriter.Read(file)
+	obj, err := fc.readWriter.Read(file)
+	var syntaxError *json.SyntaxError
+	if errors.As(err, &syntaxError) {
+		return obj, fmt.Errorf("%w | %s", err, file.Name())
+	}
+
+	return obj, err
 }
 
 // Write persists the provided translation map to the cache file.
