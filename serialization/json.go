@@ -1,7 +1,10 @@
 package serialization
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"maps"
 	"strings"
@@ -35,6 +38,13 @@ func (JSONReadWriter) Read(r io.Reader) (map[string]string, error) {
 	obj := make(map[string]any)
 	err = json.Unmarshal(data, &obj)
 	if err != nil {
+		var syntaxError *json.SyntaxError
+		if errors.As(err, &syntaxError) {
+			lineCount := len(bytes.Split(data[:syntaxError.Offset], []byte("\n")))
+
+			return nil, fmt.Errorf("malformed JSON at line %d | %w", lineCount, err)
+		}
+
 		return nil, err
 	}
 

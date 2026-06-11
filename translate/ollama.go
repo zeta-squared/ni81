@@ -33,7 +33,7 @@ type ollama struct {
 // unreachable or the translation fails.
 func (o ollama) Translate(source, fromLocale, toLocale string) (string, error) {
 	if err := o.client.Heartbeat(context.Background()); err != nil {
-		return "", fmt.Errorf("Could not find active server")
+		return "", ConnError{Message: fmt.Sprintf("could not reach ollama service | %s", err.Error())}
 	}
 
 	prompt := fmt.Sprintf(`You are a professional %[1]s to %[2]s translator.
@@ -64,7 +64,7 @@ func (o ollama) Translate(source, fromLocale, toLocale string) (string, error) {
 	}
 	err := o.client.Generate(context.Background(), &generateRequest, generateCallback)
 	if err != nil {
-		return "", fmt.Errorf("translation of key %s to %s failed", source, toLocale)
+		return "", fmt.Errorf("translation of key %s to %s failed | %w", source, toLocale, err)
 	}
 
 	return translation, nil
