@@ -122,7 +122,7 @@ the `nibl diff` command will print
  - [x] Expand LLM support to remote through web API that follow OpenAI standard
  - [ ] Local glossary (on flattened JSON keys) management for translations
  - [ ] Locale flag for `translation` to translate to specified locale
- - [ ] Improved error logging. For example, if there is malformed JSON this should be reported clearly.
+ - [x] Improved error logging. For example, if there is malformed JSON this should be reported clearly.
  - [x] Expand test coverage
  - [ ] Allow for sensitive information storage away from `toml` config file
  - [ ] Expand remote OpenAI API support:
