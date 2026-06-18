@@ -22,7 +22,7 @@ import (
 // or any filesystem or initialisation step encounters an error.
 func Initialise() error {
 	_, err := fileutil.FindNearestConfigDir(config.ConfigName)
-	if !errors.Is(err, os.ErrNotExist) {
+	if !errors.Is(err, fileutil.CfgNotExist{}) {
 		return err
 	}
 

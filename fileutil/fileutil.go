@@ -47,7 +47,7 @@ func FindNearestConfigDir(name string) (string, error) {
 		parent := filepath.Dir(dir)
 		if parent == dir {
 			// reached filesystem root
-			return "", os.ErrNotExist
+			return "", CfgNotExist{Message: "cannot use nibl outside of a nibl initialised project directory"}
 		}
 
 		dir = parent

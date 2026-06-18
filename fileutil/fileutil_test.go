@@ -119,7 +119,7 @@ func Test_FindNearestConfigDir(t *testing.T) {
 			t.Fatalf("expected empty dir, got %s", dir)
 		}
 
-		if !errors.Is(err, os.ErrNotExist) {
+		if !errors.Is(err, CfgNotExist{}) {
 			t.Fatalf("expected os.ErrNotExist, got %v", err)
 		}
 	})
