@@ -5,16 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"ni81/cache"
 	"ni81/config"
 	"ni81/fileutil"
+	"ni81/http"
 	"ni81/serialization"
 	"ni81/translate"
 	"os"
 	"path/filepath"
 	"slices"
+
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -27,6 +29,7 @@ const (
 // and dependencies, including locale settings, model configuration,
 // cache storage, and translation mechanisms.
 type project struct {
+	rootDir        string
 	defaultLocale  string
 	targetLocales  []string
 	localeDir      string
@@ -266,18 +269,28 @@ func NewProject(name string) (project, error) {
 	cachePath := filepath.Join(localeDir, cfg.I18n.DefaultLocale+".cache.json")
 	cache := cache.NewFileCache(cachePath)
 
-	modelClient := http.DefaultClient
+	apiKey := ""
+	if fileutil.Exists(filepath.Join(dir, ".env")) {
+		if err = godotenv.Load(filepath.Join(dir, ".env")); err != nil {
+			return project{}, err
+		}
+
+		apiKey = os.Getenv("API_KEY")
+	}
+
+	modelClient := http.NewAuthClient(apiKey)
 	modelBase, err := url.ParseRequestURI(cfg.Model.Url)
 	if err != nil {
 		return project{}, err
 	}
 
-	translator, err := translate.NewOllamaFromConfig(cfg.Model.Name, modelBase, modelClient)
+	translator, err := translate.NewOllamaFromConfig(cfg.Model.Name, modelBase, &modelClient)
 	if err != nil {
 		return project{}, err
 	}
 
 	return project{
+		rootDir:        dir,
 		defaultLocale:  cfg.I18n.DefaultLocale,
 		targetLocales:  targetLocales,
 		localeDir:      localeDir,

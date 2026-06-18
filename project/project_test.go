@@ -283,7 +283,7 @@ func Test_Diff(t *testing.T) {
 	}
 }
 
-func Test_NewProject(t *testing.T) {
+func Test_NewProjectWithoutEnv(t *testing.T) {
 	tmp := t.TempDir()
 
 	cfg := []byte(`
@@ -323,6 +323,63 @@ url = "http://localhost"
 
 	if diff := cmp.Diff([]string{"es"}, p.targetLocales); diff != "" {
 		t.Error(diff)
+	}
+
+	expectedDir := filepath.Join(tmp, "i18n")
+	if p.localeDir != expectedDir {
+		t.Errorf("Expected %s, got %s", expectedDir, p.localeDir)
+	}
+}
+
+func Test_NewProjectWithEnv(t *testing.T) {
+	tmp := t.TempDir()
+
+	cfg := []byte(`
+[i18n]
+default_locale = "en"
+locales = ["en", "es"]
+locale_dir = "i18n"
+
+[model]
+name = "test"
+url = "http://localhost"
+`)
+
+	if err := os.WriteFile(filepath.Join(tmp, config.ConfigName), cfg, 0664); err != nil {
+		t.Fatal(err)
+	}
+
+	apiKey := "mysecretkey"
+	if err := os.WriteFile(filepath.Join(tmp, ".env"), []byte("API_KEY="+apiKey), 0664); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Mkdir(filepath.Join(tmp, "i18n"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+
+	p, err := NewProject(config.ConfigName)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if p.defaultLocale != "en" {
+		t.Errorf("Expected en, got %s", p.defaultLocale)
+	}
+
+	if diff := cmp.Diff([]string{"es"}, p.targetLocales); diff != "" {
+		t.Error(diff)
+	}
+
+	if os.Getenv("API_KEY") != apiKey {
+		t.Errorf("Expected api key %s", apiKey)
 	}
 
 	expectedDir := filepath.Join(tmp, "i18n")
