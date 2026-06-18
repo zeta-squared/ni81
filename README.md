@@ -124,9 +124,9 @@ the `nibl diff` command will print
  - [ ] Locale flag for `translation` to translate to specified locale
  - [x] Improved error logging. For example, if there is malformed JSON this should be reported clearly.
  - [x] Expand test coverage
- - [ ] Allow for sensitive information storage away from `toml` config file
- - [ ] Expand remote OpenAI API support:
-    - [ ] Adding support for bearer authentication
+ - [x] Allow for sensitive information storage away from `toml` config file
+ - [ ] Expand OpenAI API support:
+    - [x] Adding support for bearer authentication for remote LLMs
     - [ ] Custom model prompt when using `generate` endpoint
     - [ ] Custom body values for model options, such as, `think`, `keep_alive`, `options` etc.
     - [ ] Use of endpoints other than `generate`
