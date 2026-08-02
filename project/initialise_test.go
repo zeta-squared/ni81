@@ -29,7 +29,7 @@ func Test_Initialise(t *testing.T) {
 			"en",
 			"en",
 			"ollama",
-			"",
+			"http://mymodelurl/api/v1",
 			"",
 		}, "\n")
 

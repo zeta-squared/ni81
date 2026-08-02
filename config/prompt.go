@@ -241,7 +241,7 @@ func getDefaultLocale(reader *bufio.Reader, options []string) (string, error) {
 // The input must be non-empty.
 func getModelName(reader *bufio.Reader) (string, error) {
 	for {
-		fmt.Print("Provide a (ollama) model name to use for translations: ")
+		fmt.Print("Provide a (openai) model name to use for translations: ")
 		modelName, err := readLine(reader)
 		if err != nil {
 			return "", err
@@ -262,28 +262,30 @@ func getModelName(reader *bufio.Reader) (string, error) {
 // The input is validated to ensure it is a properly formatted HTTP or HTTPS URL.
 func getModelUrl(reader *bufio.Reader) (string, error) {
 	for {
-		modelUrl := "http://localhost:11434"
-		fmt.Print("Provide the model server URL. If left blank nibl will use http://localhost:11434: ")
+		fmt.Print("Provide the model URL (local or remote): ")
 
-		input, err := readLine(reader)
+		modelUrl, err := readLine(reader)
 		if err != nil {
 			return "", err
 		}
 
-		if input != "" {
-			parsedUrl, err := url.ParseRequestURI(input)
-			if err != nil {
-				fmt.Println("Invalid URL format. Please try again.")
-				continue
-			}
-
-			if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
-				fmt.Println("URL must start with http:// or https://")
-				continue
-			}
-
-			modelUrl = parsedUrl.String()
+		if modelUrl == "" {
+			fmt.Println("Model URL cannot be empty. Please try again.")
+			continue
 		}
+
+		parsedUrl, err := url.ParseRequestURI(modelUrl)
+		if err != nil {
+			fmt.Println("Invalid URL format. Please try again.")
+			continue
+		}
+
+		if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
+			fmt.Println("URL must start with http:// or https://")
+			continue
+		}
+
+		modelUrl = parsedUrl.String()
 
 		return modelUrl, nil
 	}

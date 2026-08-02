@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
 	"ni81/cache"
 	"ni81/config"
 	"ni81/fileutil"
-	"ni81/http"
 	"ni81/serialization"
 	"ni81/translate"
 	"os"
@@ -278,13 +276,7 @@ func NewProject(name string) (project, error) {
 		apiKey = os.Getenv("API_KEY")
 	}
 
-	modelClient := http.NewAuthClient(apiKey)
-	modelBase, err := url.ParseRequestURI(cfg.Model.Url)
-	if err != nil {
-		return project{}, err
-	}
-
-	translator, err := translate.NewOllamaFromConfig(cfg.Model.Name, modelBase, &modelClient)
+	translator, err := translate.NewOpenAiClient(cfg.Model.Name, cfg.Model.Url, apiKey)
 	if err != nil {
 		return project{}, err
 	}

@@ -237,15 +237,8 @@ func Test_getModelUrl(t *testing.T) {
 	t.Run("Empty URL", func(t *testing.T) {
 		reader := bufio.NewReader(strings.NewReader("\n"))
 
-		expected := "http://localhost:11434"
-
-		got, err := getModelUrl(reader)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		if got != expected {
-			t.Fatalf("expected %s, got %s", expected, got)
+		if _, err := getModelUrl(reader); err == nil {
+			t.Fatal("expected error, got nil")
 		}
 	})
 
@@ -277,7 +270,7 @@ func Test_NewConfigFromReader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reader := bufio.NewReader(strings.NewReader("\nen\nen\nollama\n\n"))
+	reader := bufio.NewReader(strings.NewReader("\nen\nen\nollama\nhttp://mymodelurl/api/v1\n"))
 
 	expected := config{
 		I18n: i18nConfig{
@@ -287,7 +280,7 @@ func Test_NewConfigFromReader(t *testing.T) {
 		},
 		Model: ModelConfig{
 			Name: "ollama",
-			Url:  "http://localhost:11434",
+			Url:  "http://mymodelurl/api/v1",
 		},
 	}
 
